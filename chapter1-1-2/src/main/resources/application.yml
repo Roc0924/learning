@@ -1,9 +1,0 @@
-spring:
-  redis:
-    maxTotal: 20
-    maxIdle: 2
-    maxWaitMillis: 10000
-    testOnBorrow: true
-    timeout: 2000
-    cluster:
-      nodes: host:port,host:port
