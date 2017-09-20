@@ -1,13 +1,7 @@
 package leaning.lock.lock;
 
-import leaning.lock.constant.RedisConstant;
 import leaning.lock.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,16 +18,16 @@ public class RedisLock {
     RedisService redisService;
 
     public boolean lock(String sku, Long timeout) throws InterruptedException {
-        Long nanoStart = System.nanoTime();
-        while(System.nanoTime() - nanoStart < timeout)
-
-        if(redisService.setNE(sku, "test")) {
-            redisService.setExpire(sku, 3000L);
-        } else {
-            Thread.sleep(30);
+        Long start = System.currentTimeMillis();
+        while(System.currentTimeMillis() - start < timeout) {
+            if(redisService.setNE(sku, "test")) {
+                redisService.setExpire(sku, timeout);
+                return true;
+            } else {
+                System.out.println(Thread.currentThread().getName() + " sleep...");
+                Thread.sleep(30);
+            }
         }
-
-
         return false;
     }
 
