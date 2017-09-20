@@ -31,11 +31,11 @@ public class LockController {
 
 
     @RequestMapping(value = "/kill", method = RequestMethod.GET)
-    public Object secKill(@RequestParam(name = "sku") String sku) {
+    public Object secKill(@RequestParam(name = "sku") String sku, @RequestParam(name = "sleep") Long sleep) throws InterruptedException {
 
 
 
-        return redisLockService.test(sku);
+        return redisLockService.test(sku, sleep);
     }
 
 
