@@ -48,4 +48,41 @@ public class RedisService {
         });
     }
 
+    public Object get(final String key) {
+        return stringRedisTemplate.execute(new RedisCallback<Object>() {
+            @Override
+            public Object doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                return redisConnection.get(key.getBytes());
+            }
+        });
+    }
+
+
+    public Boolean set(final String key, final String value) {
+        return stringRedisTemplate.execute(new RedisCallback<Boolean>() {
+            @Override
+            public Boolean doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                redisConnection.set(key.getBytes(), value.getBytes());
+                return Boolean.TRUE;
+            }
+        });
+    }
+
+    public Long incrByLength(final String key, final Long length) {
+        return stringRedisTemplate.execute(new RedisCallback<Long>() {
+            @Override
+            public Long doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                return redisConnection.incrBy(key.getBytes(), length);
+            }
+        });
+    }
+
+
+    public Long incrByOne(final String key) {
+        return this.incrByLength(key, 1L);
+    }
+
+
+
+
 }
