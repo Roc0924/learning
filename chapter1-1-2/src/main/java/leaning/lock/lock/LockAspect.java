@@ -24,7 +24,7 @@ import java.util.Map;
 @Aspect
 public class LockAspect {
 
-    @Autowired
+//    @Autowired
     RedisLock redisLock;
 
     @Around("@annotation(redisLockAnno)")
