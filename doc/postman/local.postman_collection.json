@@ -1,0 +1,348 @@
+{
+	"variables": [],
+	"info": {
+		"name": "local",
+		"_postman_id": "d66d035e-db1f-254f-e12c-611567a254eb",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "leaning",
+			"description": "",
+			"item": [
+				{
+					"name": "chapter1-1-2",
+					"description": "",
+					"item": [
+						{
+							"name": "test",
+							"request": {
+								"url": {
+									"raw": "http://localhost:9080/test/test1?key=key1&value=value1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "9080",
+									"path": [
+										"test",
+										"test1"
+									],
+									"query": [
+										{
+											"key": "key",
+											"value": "key1",
+											"equals": true,
+											"description": ""
+										},
+										{
+											"key": "value",
+											"value": "value1",
+											"equals": true,
+											"description": ""
+										}
+									],
+									"variable": []
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Gomeplus-Login-Token",
+										"value": "{{X-Gomeplus-Login-Token}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-User-Id",
+										"value": "{{X-Gomeplus-User-Id}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Access-Token",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Device",
+										"value": "Android/5.33.2/Mi3/dsa2432212",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App",
+										"value": "001/0110105010010000",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Net",
+										"value": "Wifi",
+										"description": ""
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Trace-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App-Version",
+										"value": "1.1.0",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Unique-Device-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Sid",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Lang",
+										"value": "en",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Time-Zone",
+										"value": "+05:30",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Region",
+										"value": "in",
+										"description": ""
+									}
+								],
+								"body": {},
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "testLock",
+							"request": {
+								"url": {
+									"raw": "http://localhost:9080/lock/kill?sku=sku1&sleep=10000",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "9080",
+									"path": [
+										"lock",
+										"kill"
+									],
+									"query": [
+										{
+											"key": "sku",
+											"value": "sku1",
+											"equals": true,
+											"description": ""
+										},
+										{
+											"key": "sleep",
+											"value": "10000",
+											"equals": true,
+											"description": ""
+										}
+									],
+									"variable": []
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Gomeplus-Login-Token",
+										"value": "{{X-Gomeplus-Login-Token}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-User-Id",
+										"value": "{{X-Gomeplus-User-Id}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Access-Token",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Device",
+										"value": "Android/5.33.2/Mi3/dsa2432212",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App",
+										"value": "001/0110105010010000",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Net",
+										"value": "Wifi",
+										"description": ""
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Trace-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App-Version",
+										"value": "1.1.0",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Unique-Device-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Sid",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Lang",
+										"value": "en",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Time-Zone",
+										"value": "+05:30",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Region",
+										"value": "in",
+										"description": ""
+									}
+								],
+								"body": {},
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "testLock1",
+							"request": {
+								"url": {
+									"raw": "http://localhost:9080/lock/kill1?sku=sku1&sleep=1000",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "9080",
+									"path": [
+										"lock",
+										"kill1"
+									],
+									"query": [
+										{
+											"key": "sku",
+											"value": "sku1",
+											"equals": true,
+											"description": ""
+										},
+										{
+											"key": "sleep",
+											"value": "1000",
+											"equals": true,
+											"description": ""
+										}
+									],
+									"variable": []
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Gomeplus-Login-Token",
+										"value": "{{X-Gomeplus-Login-Token}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-User-Id",
+										"value": "{{X-Gomeplus-User-Id}}",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Access-Token",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Device",
+										"value": "Android/5.33.2/Mi3/dsa2432212",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App",
+										"value": "001/0110105010010000",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Net",
+										"value": "Wifi",
+										"description": ""
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Trace-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-App-Version",
+										"value": "1.1.0",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Unique-Device-Id",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Sid",
+										"value": "",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Lang",
+										"value": "en",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Time-Zone",
+										"value": "+05:30",
+										"description": ""
+									},
+									{
+										"key": "X-Gomeplus-Region",
+										"value": "in",
+										"description": ""
+									}
+								],
+								"body": {},
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		}
+	]
+}
