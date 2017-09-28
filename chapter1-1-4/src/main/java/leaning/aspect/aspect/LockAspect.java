@@ -5,7 +5,8 @@ package leaning.aspect.aspect;
  * Author               : wangzhenpeng
  * Date                 : 2017/9/28
  * Time                 : 14:19
- * Description          :
+ * Description          : 锁切面
  */
 public class LockAspect {
+
 }
