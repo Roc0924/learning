@@ -23,7 +23,7 @@ public class TestController {
     TestService testService;
 
     @RequestMapping(value = "/testLockParameter", method = RequestMethod.GET)
-    public Object testLockParameter(@LockParameter String param1) {
-        return testService.testLockParameter(param1);
+    public Object testLockParameter(@LockParameter String param1, String param2) {
+        return testService.testLockParameter(param1, param2);
     }
 }
