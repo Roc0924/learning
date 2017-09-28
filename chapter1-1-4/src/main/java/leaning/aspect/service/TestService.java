@@ -17,7 +17,7 @@ import java.util.Map;
 @Service("testService")
 public class TestService {
 
-    @CatchLock
+    @CatchLock(prefix = "redis:lock:")
     public Map<String, Object> testLockParameter(@LockParameter String param1) {
         Map<String, Object> result = new HashMap<>();
         result.put("param1", param1);
