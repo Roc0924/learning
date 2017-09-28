@@ -1,5 +1,6 @@
 package leaning.aspect.service;
 
+import leaning.aspect.annotation.CatchLock;
 import leaning.aspect.annotation.LockParameter;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 @Service("testService")
 public class TestService {
 
+    @CatchLock
     public Map<String, Object> testLockParameter(@LockParameter String param1) {
         Map<String, Object> result = new HashMap<>();
         result.put("param1", param1);
