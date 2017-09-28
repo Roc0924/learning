@@ -14,5 +14,5 @@ import java.lang.annotation.*;
 @Documented
 public @interface CatchLock {
     String prefix() default "";     // 锁前缀
-    int expire() default 2000;      // 失效时间
+    long expire() default 2000L;      // 失效时间
 }

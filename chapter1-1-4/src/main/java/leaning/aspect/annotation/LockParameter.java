@@ -13,5 +13,4 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface LockParameter {
-    String test() default "";
 }

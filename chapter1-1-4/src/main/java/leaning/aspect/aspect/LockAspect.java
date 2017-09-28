@@ -4,15 +4,20 @@ package leaning.aspect.aspect;
 import leaning.aspect.annotation.CatchLock;
 import leaning.aspect.annotation.LockAttribute;
 import leaning.aspect.annotation.LockParameter;
+import leaning.aspect.lock.Lock;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Create with IntelliJ IDEA
@@ -24,6 +29,9 @@ import java.lang.reflect.Parameter;
 @Component
 @Aspect
 public class LockAspect {
+
+    @Autowired
+    Lock lock;
 
     @Around("@annotation(catchLock)")
     public Object catchLock(final ProceedingJoinPoint pjp, CatchLock catchLock) throws NoSuchMethodException {
@@ -42,6 +50,9 @@ public class LockAspect {
         // 获得方法上的注解
         Parameter[] parameters = m.getParameters();
         Object[] objects = pjp.getArgs();
+        List<String> lockList = new ArrayList<>();
+
+
         for (int i = 0; i < parameters.length; i++ ) {
             Parameter parameter = parameters[i];
             Object obj = objects[i];
@@ -51,12 +62,13 @@ public class LockAspect {
                 // 锁定参数
                 if(annotation.annotationType().equals(LockParameter.class)) {
                     System.out.println(obj);
-                    System.out.println("LockParameter");
+                    lockList.add(obj.toString());
                 } else if (annotation.annotationType().equals(LockAttribute.class)){
                     System.out.println("LockAttribute");
                 }
             }
         }
+        lock.lock(lockList, cl.expire());
 
         System.out.println("========================>>before<<========================");
 
@@ -66,10 +78,12 @@ public class LockAspect {
             result = pjp.proceed();
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-        }
+        } finally {
+            System.out.println("========================<<after>>=========================");
 
-        System.out.println("========================<<after>>=========================");
-        System.out.println("========================>>after<<=========================");
+            lock.unlock(lockList);
+            System.out.println("========================>>after<<=========================");
+        }
         return result;
     }
 
