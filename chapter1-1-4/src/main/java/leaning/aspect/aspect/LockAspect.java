@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class LockAspect {
     Lock lock;
 
     @Around("@annotation(catchLock)")
-    public Object catchLock(final ProceedingJoinPoint pjp, CatchLock catchLock) throws NoSuchMethodException {
+    public Object catchLock(final ProceedingJoinPoint pjp, CatchLock catchLock) throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
         Object result = null;
         System.out.println("========================<<before>>========================");
         MethodSignature ms = (MethodSignature) pjp.getSignature();
@@ -61,9 +62,16 @@ public class LockAspect {
             for (Annotation annotation : annotations) {
                 // 锁定参数
                 if(annotation.annotationType().equals(LockParameter.class)) {
-                    System.out.println(obj);
                     lockList.add(obj.toString());
                 } else if (annotation.annotationType().equals(LockAttribute.class)){
+                    String[] fields = ((LockAttribute)annotation).fileds();
+                    Class cls = obj.getClass();
+                    for (String field : fields) {
+                        Field fd = cls.getDeclaredField(field);
+                        fd.setAccessible(Boolean.TRUE);
+                        String value = fd.get(obj).toString();
+                        lockList.add(value);
+                    }
                     System.out.println("LockAttribute");
                 }
             }

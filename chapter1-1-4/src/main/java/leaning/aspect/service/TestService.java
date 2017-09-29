@@ -1,7 +1,9 @@
 package leaning.aspect.service;
 
 import leaning.aspect.annotation.CatchLock;
+import leaning.aspect.annotation.LockAttribute;
 import leaning.aspect.annotation.LockParameter;
+import leaning.aspect.entity.TestAspectEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -24,5 +26,11 @@ public class TestService {
         result.put("param2", param2);
         System.out.println("testService.testLockParameter " + param1 + " " + param2);
         return result;
+    }
+
+    @CatchLock(prefix = "redis:lock:")
+    public Object testLockAttributes( @LockAttribute(fileds = {"testAttribute1", "testAttribute2"}) TestAspectEntity body) {
+        System.out.println("testService.testLockAttributes " + body);
+        return body;
     }
 }

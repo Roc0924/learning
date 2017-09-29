@@ -8,13 +8,23 @@ package leaning.aspect.entity;
  * Description          : 实体类
  */
 public class TestAspectEntity {
-    private String testAttribute;
+    private String testAttribute1;
 
-    public String getTestAttribute() {
-        return testAttribute;
+    private String testAttribute2;
+
+    public String getTestAttribute1() {
+        return testAttribute1;
     }
 
-    public void setTestAttribute(String testAttribute) {
-        this.testAttribute = testAttribute;
+    public void setTestAttribute1(String testAttribute1) {
+        this.testAttribute1 = testAttribute1;
+    }
+
+    public String getTestAttribute2() {
+        return testAttribute2;
+    }
+
+    public void setTestAttribute2(String testAttribute2) {
+        this.testAttribute2 = testAttribute2;
     }
 }

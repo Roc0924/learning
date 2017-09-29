@@ -1,8 +1,11 @@
 package leaning.aspect.controller;
 
+import leaning.aspect.annotation.LockAttribute;
 import leaning.aspect.annotation.LockParameter;
+import leaning.aspect.entity.TestAspectEntity;
 import leaning.aspect.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,4 +29,10 @@ public class TestController {
     public Object testLockParameter(@LockParameter String param1, String param2) {
         return testService.testLockParameter(param1, param2);
     }
+
+    @RequestMapping(value = "/testLockAttributes", method = RequestMethod.POST)
+    public Object testLockAttributes(@RequestBody TestAspectEntity body) {
+        return testService.testLockAttributes(body);
+    }
+
 }
