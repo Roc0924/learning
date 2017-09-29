@@ -1,6 +1,5 @@
 package leaning.aspect.controller;
 
-import leaning.aspect.annotation.LockAttribute;
 import leaning.aspect.annotation.LockParameter;
 import leaning.aspect.entity.TestAspectEntity;
 import leaning.aspect.service.TestService;
