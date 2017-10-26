@@ -1,6 +1,7 @@
 package leaning.transactional.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Create with IntelliJ IDEA
@@ -11,4 +12,10 @@ import org.springframework.stereotype.Service;
  */
 @Service("transactionalService")
 public class TransactionalService {
+
+    @Transactional
+    public Object testTransaction1(String param1) {
+
+        return param1;
+    }
 }
