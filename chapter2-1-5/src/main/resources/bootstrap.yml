@@ -1,8 +1,10 @@
 spring:
   application:
     name: compute-service
-server:
-  port: 2222
+  profiles:
+    active: instance1
+
+
 eureka:
   client:
     service-url:
