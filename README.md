@@ -8,3 +8,6 @@
 ## chapter2-1-2 config server
 ## chapter2-1-3 config client
 ## chapter2-1-4 eureka
+## chapter2-1-5 compute service
+## chapter2-1-6 ribbon client
+## chapter2-1-7 feign client
