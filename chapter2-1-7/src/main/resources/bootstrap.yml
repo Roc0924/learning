@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: feign-consumer
+server:
+  port: 3334
+eureka:
+  client:
+    service-url:
+      defaultZone
+
