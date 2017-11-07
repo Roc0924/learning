@@ -1,0 +1,12 @@
+@startuml
+LoadBalancerAutoConfiguration -> LoadBalancerInterceptor: 调用LoadBalancerInterceptor创建拦截器
+LoadBalancerAutoConfiguration --> RestTemplateCustomizer: 通过RestTemplateCustomizer实例为RestTemplate添加负载均衡拦截器
+
+
+@enduml
+
+@startuml
+RibbonClientConfiguration --> IRule: 自动装配路由策略类，默认使用ZoneAvoidanceRule
+RibbonClientConfiguration --> ILoadBalancer: 自动装配负载均衡器，默认使用ZoneAwareLoadBalancer
+
+@enduml

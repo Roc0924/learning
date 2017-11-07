@@ -1,0 +1,15 @@
+@startuml
+RestTemplate -> LoadBalancerInterceptor: 1.拦截器通过方法intercept拦截
+LoadBalancerInterceptor --> HttpRequest: 2.调用getURI，返回URI实例originalUri
+LoadBalancerInterceptor --> URI: 3.调用originalUri的getHost函数，此时只返回应用的名称
+LoadBalancerInterceptor --> LoadBalancerRequestFactory:4.调用工厂类的createRequest方法创建LoadBalancerRequest
+LoadBalancerInterceptor --> LoadBalancerClient:5.调用execute(serviceId, request)
+LoadBalancerClient --> LoadBalancerClient:6.调用getLoadBalancer(serviceId)获得ZoneAwareLoadBalancer
+LoadBalancerClient --> LoadBalancerClient:7.调用getServer(loadBalancer)获得一个server
+LoadBalancerClient --> ZoneAwareLoadBalancer:8.根据之前的配置，调用的chooseServer
+LoadBalancerClient --> LoadBalancerClient:9.把server封装成一个RibbonServer实例
+LoadBalancerClient --> LoadBalancerClient:10.execute(serviceId, serviceInstance, request)
+LoadBalancerClient --> LoadBalancerRequest:11.调用apply(final ServiceInstance instance)
+LoadBalancerRequest --> ClientHttpRequestExecution:12.调用execute(HttpRequest request, byte[] body)
+ClientHttpRequestExecution --> ClientHttpRequest:13.调用execute()方法，发起请求
+@enduml
