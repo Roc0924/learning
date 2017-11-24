@@ -5,6 +5,9 @@ spring:
     name: zipkin-item
   zipkin:
     base-url: http://localhost:21901
+  sleuth:
+    sampler:
+      percentage: 1
 eureka:
   client:
     service-url:
