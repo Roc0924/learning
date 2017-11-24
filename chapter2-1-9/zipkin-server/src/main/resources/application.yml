@@ -1,0 +1,6 @@
+server:
+  port: 21901
+spring:
+  application:
+    name: zipkin-server
+
