@@ -12,3 +12,6 @@
 ## chapter2-1-6 ribbon client
 ## chapter2-1-7 feign client
 ## chapter2-1-8 ribbon feign 负载均衡
+## chapter2-1-9 zipkin
+## chapter2-2-1 spring boot 自动化配置，starter
+## chapter3-1-1 kotlin
