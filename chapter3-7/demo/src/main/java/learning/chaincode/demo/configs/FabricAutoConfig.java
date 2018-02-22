@@ -336,7 +336,7 @@ public class FabricAutoConfig {
             ///////////////
             /// Send instantiate transaction to orderer
             log.info("Sending instantiateTransaction to orderer with a and b set to 100 and {} respectively", "" + (200 + delta));
-
+            channel.sendTransaction(successful, orderers);
 
         } catch (Exception e) {
             log.info("Caught an exception running channel {}", channel.getName());

@@ -33,8 +33,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+
 /**
- * A local file-based key value store.
+ * Create with IntelliJ IDEA
+ * Author               : wangzhenpeng
+ * Date                 : 2018/2/13
+ * Time                 : 15:54
+ * Description          : A local file-based key value store.
  */
 public class SampleStore {
 

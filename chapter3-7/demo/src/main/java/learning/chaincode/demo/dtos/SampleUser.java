@@ -22,6 +22,14 @@ import org.hyperledger.fabric.sdk.User;
 import java.io.*;
 import java.util.Set;
 
+
+/**
+ * Create with IntelliJ IDEA
+ * Author               : wangzhenpeng
+ * Date                 : 2018/2/13
+ * Time                 : 15:54
+ * Description          : User
+ */
 public class SampleUser implements User, Serializable {
     private static final long serialVersionUID = 8077132186383604355L;
 
