@@ -7,10 +7,10 @@ import lombok.Data;
  * Author               : wangzhenpeng
  * Date                 : 2018/2/13
  * Time                 : 15:54
- * Description          :
+ * Description          : 记录
  */
 @Data
 public class Record {
-    private String userName;
+    private String userId;
     private Integer balance;
 }

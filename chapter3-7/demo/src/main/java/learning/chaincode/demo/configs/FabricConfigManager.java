@@ -175,7 +175,7 @@ public class FabricConfigManager {
                 location.replaceFirst("^http://", "https://") : location;
     }
 
-    public Collection<SampleOrg> getIntegrationSampleOrgs() {
+    Collection<SampleOrg> getIntegrationSampleOrgs() {
         return Collections.unmodifiableCollection(sampleOrgs.values());
     }
 
@@ -184,17 +184,8 @@ public class FabricConfigManager {
         return sampleOrgs.get(name);
 
     }
-//    public void checkConfig() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, MalformedURLException {
-//
-//        testSampleOrgs = testConfig.getIntegrationTestsSampleOrgs();
-//        //Set up hfca for each sample org
-//
-//        for (SampleOrg sampleOrg : testSampleOrgs) {
-//            sampleOrg.setCAClient(HFCAClient.createNewInstance(sampleOrg.getCALocation(), sampleOrg.getCAProperties()));
-//        }
-//    }
 
-    public Properties getOrdererProperties(String name) {
+    Properties getOrdererProperties(String name) {
 
         return getEndPointProperties("orderer", name);
 
@@ -231,21 +222,21 @@ public class FabricConfigManager {
 
     }
 
-    public String getTestChannelPath() {
+    private String getTestChannelPath() {
 
         return "demo/target/classes/e2e-2Orgs/channel";
 
     }
 
 
-    public Properties getPeerProperties(String name) {
+    Properties getPeerProperties(String name) {
 
         return getEndPointProperties("peer", name);
 
     }
 
 
-    public Properties getEventHubProperties(String name) {
+    Properties getEventHubProperties(String name) {
 
         return getEndPointProperties("peer", name); //uses same as named peer
 
