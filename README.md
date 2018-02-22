@@ -19,10 +19,13 @@
 ## chapter2-2-3 websocket
 ## chapter2-2-4 spring data jpa、data rest
 ## chapter2-2-5 spring boot 企业级开发
-## chapter2-2-6 spring boot test
-## chapter2-2-7 spring boot actuator
+## chapter2-2-6 spr 
 ## chapter2-2-8 spring boot cloud
 ### spring security
 # 3-1 kotlin
 ## chapter3-1-1 kotlin
-# 3-2 java8
+# 3-2 java8 
+# 3-3 设计模式
+
+# 3-6 jvm
+# 3-7 区块连
