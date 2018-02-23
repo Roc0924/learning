@@ -1,21 +1,16 @@
 package learning.chaincode.demo.services;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import learning.chaincode.demo.configs.FabricConfig;
 import learning.chaincode.demo.configs.FabricConfigManager;
 import learning.chaincode.demo.dtos.Record;
 import learning.chaincode.demo.dtos.SampleOrg;
-import learning.chaincode.demo.dtos.Test;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
-import org.hyperledger.fabric.protos.ledger.rwset.kvrwset.KvRwset;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -150,148 +145,148 @@ public class FabricService {
 
 
 
-    public Test queryBlock() {
-        BlockchainInfo channelInfo = null;
-        try {
-            channelInfo = channel.queryBlockchainInfo();
-
-            for (long current = channelInfo.getHeight() - 1; current > -1; --current){
-                BlockInfo returnedBlock = channel.queryBlockByNumber(current);
-                
-                
-                int i = 0;
-                for (BlockInfo.EnvelopeInfo envelopeInfo : returnedBlock.getEnvelopeInfos()) {
-                    ++i;
-                    final String channelId = envelopeInfo.getChannelId();
-                    log.info("channelId:{}", channelId);
-                    if (envelopeInfo.getType() == BlockInfo.EnvelopeType.TRANSACTION_ENVELOPE) {
-                        BlockInfo.TransactionEnvelopeInfo transactionEnvelopeInfo = (BlockInfo.TransactionEnvelopeInfo) envelopeInfo;
-                        log.info("  Transaction number:{} has:{} actions", i, transactionEnvelopeInfo.getTransactionActionInfoCount());
-                        log.info("  Transaction number:{} isValid:{}", i, transactionEnvelopeInfo.isValid());
-                        log.info("  Transaction number:{} validation code:{}", i, transactionEnvelopeInfo.getValidationCode());
-                        
-                        int j = 0;
-                        for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo : transactionEnvelopeInfo.getTransactionActionInfos()) {
-                            ++j;
-                            log.info("   Transaction action:{} has response status:{}", j, transactionActionInfo.getResponseStatus());
-                            log.info("   Transaction action:{} has response message bytes as string::{}", j, printableString(new String(transactionActionInfo.getResponseMessageBytes(), "UTF-8")));
-                            log.info("   Transaction action:{} has:{} endorsements", j, transactionActionInfo.getEndorsementsCount());
-
-
-
-
-
-
-                            for (int n = 0; n < transactionActionInfo.getEndorsementsCount(); ++n) {
-                                BlockInfo.EndorserInfo endorserInfo = transactionActionInfo.getEndorsementInfo(n);
-                                log.info("Endorser:{} signature::{}", n, Hex.encodeHexString(endorserInfo.getSignature()));
-                                log.info("Endorser:{} endorser::{}", n, new String(endorserInfo.getEndorser(), "UTF-8"));
-                            }
-                            log.info("   Transaction action:{} has:{} chaincode input arguments", j, transactionActionInfo.getChaincodeInputArgsCount());
-                            for (int z = 0; z < transactionActionInfo.getChaincodeInputArgsCount(); ++z) {
-                                log.info("     Transaction action:{} has chaincode input argument:{} is::{}", j, z,
-                                        printableString(new String(transactionActionInfo.getChaincodeInputArgs(z), "UTF-8")));
-                            }
-
-                            log.info("   Transaction action:{} proposal response status::{}", j,
-                                    transactionActionInfo.getProposalResponseStatus());
-                            log.info("   Transaction action:{} proposal response payload::{}", j,
-                                    printableString(new String(transactionActionInfo.getProposalResponsePayload())));
-
-                            TxReadWriteSetInfo rwsetInfo = transactionActionInfo.getTxReadWriteSet();
-                            if (null != rwsetInfo) {
-                                log.info("   Transaction action:{} has:{} name space read write sets", j, rwsetInfo.getNsRwsetCount());
-
-                                for (TxReadWriteSetInfo.NsRwsetInfo nsRwsetInfo : rwsetInfo.getNsRwsetInfos()) {
-                                    final String namespace = nsRwsetInfo.getNamespace();
-                                    KvRwset.KVRWSet rws = nsRwsetInfo.getRwset();
-
-                                    int rs = -1;
-                                    for (KvRwset.KVRead readList : rws.getReadsList()) {
-                                        rs++;
-
-                                        log.info("     Namespace:{} read set:{} key:{}  version [{}:{}]", namespace, rs, readList.getKey(),
-                                                readList.getVersion().getBlockNum(), readList.getVersion().getTxNum());
-
-//                                        if ("bar".equals(channelId) && blockNumber == 2) {
-//                                            if ("example_cc_go".equals(namespace)) {
-//                                                if (rs == 0) {
-//                                                    assertEquals("a", readList.getKey());
-//                                                    assertEquals(1, readList.getVersion().getBlockNum());
-//                                                    assertEquals(0, readList.getVersion().getTxNum());
-//                                                } else if (rs == 1) {
-//                                                    assertEquals("b", readList.getKey());
-//                                                    assertEquals(1, readList.getVersion().getBlockNum());
-//                                                    assertEquals(0, readList.getVersion().getTxNum());
-//                                                } else {
-//                                                    fail(format("unexpected readset:{}", rs));
-//                                                }
+//    public Test queryBlock() {
+//        BlockchainInfo channelInfo = null;
+//        try {
+//            channelInfo = channel.queryBlockchainInfo();
 //
-//                                                TX_EXPECTED.remove("readset1");
-//                                            }
-//                                        }
-                                    }
-
-                                    rs = -1;
-                                    for (KvRwset.KVWrite writeList : rws.getWritesList()) {
-                                        rs++;
-                                        String valAsString = printableString(new String(writeList.getValue().toByteArray(), "UTF-8"));
-
-                                        log.info("     Namespace:{} write set:{} key:{} has value {} ", namespace, rs,
-                                                writeList.getKey(),
-                                                valAsString);
-
-//                                        if ("bar".equals(channelId) && blockNumber == 2) {
-//                                            if (rs == 0) {
-//                                                assertEquals("a", writeList.getKey());
-//                                                assertEquals("400", valAsString);
-//                                            } else if (rs == 1) {
-//                                                assertEquals("b", writeList.getKey());
-//                                                assertEquals("400", valAsString);
-//                                            } else {
-//                                                fail(format("unexpected writeset:{}", rs));
-//                                            }
+//            for (long current = channelInfo.getHeight() - 1; current > -1; --current){
+//                BlockInfo returnedBlock = channel.queryBlockByNumber(current);
 //
-//                                            TX_EXPECTED.remove("writeset1");
-//                                        }
-                                    }
-                                }
-                            }
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                        }
-                        
-                        
-                    }
-                    
-                    
-                }
-
-                log.info("=========================================================================================================================================================");
-                log.info("=========================================================================================================================================================");
-                log.info("=========================================================================================================================================================");
-                log.info("=========================================================================================================================================================");
-            }
-
-
-        } catch (ProposalException | InvalidArgumentException | UnsupportedEncodingException | InvalidProtocolBufferException e) {
-            e.printStackTrace();
-        }
-
-
-        assert channelInfo != null;
-        Test test = new Test();
-        test.setCount(Long.valueOf(channelInfo.getHeight()).intValue());
-        return test;
-    }
+//
+//                int i = 0;
+//                for (BlockInfo.EnvelopeInfo envelopeInfo : returnedBlock.getEnvelopeInfos()) {
+//                    ++i;
+//                    final String channelId = envelopeInfo.getChannelId();
+//                    log.info("channelId:{}", channelId);
+//                    if (envelopeInfo.getType() == BlockInfo.EnvelopeType.TRANSACTION_ENVELOPE) {
+//                        BlockInfo.TransactionEnvelopeInfo transactionEnvelopeInfo = (BlockInfo.TransactionEnvelopeInfo) envelopeInfo;
+//                        log.info("  Transaction number:{} has:{} actions", i, transactionEnvelopeInfo.getTransactionActionInfoCount());
+//                        log.info("  Transaction number:{} isValid:{}", i, transactionEnvelopeInfo.isValid());
+//                        log.info("  Transaction number:{} validation code:{}", i, transactionEnvelopeInfo.getValidationCode());
+//
+//                        int j = 0;
+//                        for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo : transactionEnvelopeInfo.getTransactionActionInfos()) {
+//                            ++j;
+//                            log.info("   Transaction action:{} has response status:{}", j, transactionActionInfo.getResponseStatus());
+//                            log.info("   Transaction action:{} has response message bytes as string::{}", j, printableString(new String(transactionActionInfo.getResponseMessageBytes(), "UTF-8")));
+//                            log.info("   Transaction action:{} has:{} endorsements", j, transactionActionInfo.getEndorsementsCount());
+//
+//
+//
+//
+//
+//
+//                            for (int n = 0; n < transactionActionInfo.getEndorsementsCount(); ++n) {
+//                                BlockInfo.EndorserInfo endorserInfo = transactionActionInfo.getEndorsementInfo(n);
+//                                log.info("Endorser:{} signature::{}", n, Hex.encodeHexString(endorserInfo.getSignature()));
+//                                log.info("Endorser:{} endorser::{}", n, new String(endorserInfo.getEndorser(), "UTF-8"));
+//                            }
+//                            log.info("   Transaction action:{} has:{} chaincode input arguments", j, transactionActionInfo.getChaincodeInputArgsCount());
+//                            for (int z = 0; z < transactionActionInfo.getChaincodeInputArgsCount(); ++z) {
+//                                log.info("     Transaction action:{} has chaincode input argument:{} is::{}", j, z,
+//                                        printableString(new String(transactionActionInfo.getChaincodeInputArgs(z), "UTF-8")));
+//                            }
+//
+//                            log.info("   Transaction action:{} proposal response status::{}", j,
+//                                    transactionActionInfo.getProposalResponseStatus());
+//                            log.info("   Transaction action:{} proposal response payload::{}", j,
+//                                    printableString(new String(transactionActionInfo.getProposalResponsePayload())));
+//
+//                            TxReadWriteSetInfo rwsetInfo = transactionActionInfo.getTxReadWriteSet();
+//                            if (null != rwsetInfo) {
+//                                log.info("   Transaction action:{} has:{} name space read write sets", j, rwsetInfo.getNsRwsetCount());
+//
+//                                for (TxReadWriteSetInfo.NsRwsetInfo nsRwsetInfo : rwsetInfo.getNsRwsetInfos()) {
+//                                    final String namespace = nsRwsetInfo.getNamespace();
+//                                    KvRwset.KVRWSet rws = nsRwsetInfo.getRwset();
+//
+//                                    int rs = -1;
+//                                    for (KvRwset.KVRead readList : rws.getReadsList()) {
+//                                        rs++;
+//
+//                                        log.info("     Namespace:{} read set:{} key:{}  version [{}:{}]", namespace, rs, readList.getKey(),
+//                                                readList.getVersion().getBlockNum(), readList.getVersion().getTxNum());
+//
+////                                        if ("bar".equals(channelId) && blockNumber == 2) {
+////                                            if ("example_cc_go".equals(namespace)) {
+////                                                if (rs == 0) {
+////                                                    assertEquals("a", readList.getKey());
+////                                                    assertEquals(1, readList.getVersion().getBlockNum());
+////                                                    assertEquals(0, readList.getVersion().getTxNum());
+////                                                } else if (rs == 1) {
+////                                                    assertEquals("b", readList.getKey());
+////                                                    assertEquals(1, readList.getVersion().getBlockNum());
+////                                                    assertEquals(0, readList.getVersion().getTxNum());
+////                                                } else {
+////                                                    fail(format("unexpected readset:{}", rs));
+////                                                }
+////
+////                                                TX_EXPECTED.remove("readset1");
+////                                            }
+////                                        }
+//                                    }
+//
+//                                    rs = -1;
+//                                    for (KvRwset.KVWrite writeList : rws.getWritesList()) {
+//                                        rs++;
+//                                        String valAsString = printableString(new String(writeList.getValue().toByteArray(), "UTF-8"));
+//
+//                                        log.info("     Namespace:{} write set:{} key:{} has value {} ", namespace, rs,
+//                                                writeList.getKey(),
+//                                                valAsString);
+//
+////                                        if ("bar".equals(channelId) && blockNumber == 2) {
+////                                            if (rs == 0) {
+////                                                assertEquals("a", writeList.getKey());
+////                                                assertEquals("400", valAsString);
+////                                            } else if (rs == 1) {
+////                                                assertEquals("b", writeList.getKey());
+////                                                assertEquals("400", valAsString);
+////                                            } else {
+////                                                fail(format("unexpected writeset:{}", rs));
+////                                            }
+////
+////                                            TX_EXPECTED.remove("writeset1");
+////                                        }
+//                                    }
+//                                }
+//                            }
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//                        }
+//
+//
+//                    }
+//
+//
+//                }
+//
+//                log.info("=========================================================================================================================================================");
+//                log.info("=========================================================================================================================================================");
+//                log.info("=========================================================================================================================================================");
+//                log.info("=========================================================================================================================================================");
+//            }
+//
+//
+//        } catch (ProposalException | InvalidArgumentException | UnsupportedEncodingException | InvalidProtocolBufferException e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//        assert channelInfo != null;
+//        Test test = new Test();
+//        test.setCount(Long.valueOf(channelInfo.getHeight()).intValue());
+//        return test;
+//    }
 
 
 
@@ -309,4 +304,7 @@ public class FabricService {
 
     }
 
+
+
+//    public InstalledProposal installChainCo
 }

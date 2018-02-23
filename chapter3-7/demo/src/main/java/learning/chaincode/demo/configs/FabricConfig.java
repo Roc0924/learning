@@ -46,6 +46,7 @@ public class FabricConfig {
 
     private String adminName;
     private String user1Name;
+    private String user1Secret;
     private String fixturesPath;
     private String chainCodeName;
     private String chainCodePath;

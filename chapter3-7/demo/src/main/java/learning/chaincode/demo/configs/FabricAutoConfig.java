@@ -1,5 +1,7 @@
 package learning.chaincode.demo.configs;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import learning.chaincode.demo.dtos.SampleOrg;
 import learning.chaincode.demo.dtos.SampleStore;
 import learning.chaincode.demo.dtos.SampleUser;
@@ -24,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Create with IntelliJ IDEA
@@ -96,14 +97,39 @@ public class FabricAutoConfig {
             }
 
             sampleOrg.setAdmin(admin); // The admin of this org --
-
             SampleUser user = sampleStore.getMember(fabricConfigManager.getFabricConfig().getUser1Name(), sampleOrg.getName());
-            if (!user.isRegistered()) {  // users need to be registered AND enrolled
-                RegistrationRequest rr = new RegistrationRequest(user.getName(), "org1.department1");
-                user.setEnrollmentSecret(ca.register(rr, admin));
+
+
+            RegistrationRequest rr = new RegistrationRequest(user.getName(), "org1.department1");
+            rr.setSecret(fabricConfigManager.getFabricConfig().getUser1Secret());
+            String enrollmentSecret = null;
+            try {
+                enrollmentSecret = ca.register(rr, admin);
+            } catch (Exception e) {
+                Map requestStrObj = null;
+                Map responseStrObj = null;
+                String message = e.getMessage();
+
+                if(message.contains("request body") && message.contains("Response")&& message.contains("status code: 500")) {
+                    requestStrObj = JSONObject.parseObject(message.substring(message.indexOf("request body") + 13,
+                            message.indexOf("with status code")), Map.class);
+                    responseStrObj = JSONObject.parseObject(message.substring(message.indexOf("Response") + 9,
+                            message.length()), Map.class);
+                }
+                assert responseStrObj != null;
+                if (((JSONArray)responseStrObj.get("errors")).getJSONObject(0).get("code").toString().equals("0")) {
+                    enrollmentSecret = requestStrObj.get("id").toString();
+                    log.warn("{} is already registered", requestStrObj.get("id").toString());
+                } else {
+                    throw e;
+                }
             }
+            user.setEnrollmentSecret(enrollmentSecret);
+
             if (!user.isEnrolled()) {
-                user.setEnrollment(ca.enroll(user.getName(), user.getEnrollmentSecret()));
+                Enrollment enrollment = null;
+                enrollment = ca.enroll(user.getName(), user.getEnrollmentSecret());
+                user.setEnrollment(enrollment);
                 user.setMspId(mspid);
             }
             sampleOrg.addUser(user); //Remember user belongs to this Org
@@ -146,6 +172,57 @@ public class FabricAutoConfig {
 
         SampleOrg sampleOrg = fabricConfigManager.getIntegrationTestsSampleOrg("peerOrg1");
         String name = config.getFooChannelName();
+
+        Channel newChannel = null;
+        try {
+            newChannel = reconstructChannel(fabricConfigManager, name, client, sampleOrg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return newChannel;
+    }
+
+
+    private Channel reconstructChannel(FabricConfigManager fabricConfigManager, String name, HFClient client, SampleOrg sampleOrg) throws Exception {
+
+        client.setUserContext(sampleOrg.getPeerAdmin());
+        Channel newChannel = client.newChannel(name);
+
+        for (String orderName : sampleOrg.getOrdererNames()) {
+            newChannel.addOrderer(client.newOrderer(orderName, sampleOrg.getOrdererLocation(orderName),
+                    fabricConfigManager.getOrdererProperties(orderName)));
+        }
+
+        for (String peerName : sampleOrg.getPeerNames()) {
+            String peerLocation = sampleOrg.getPeerLocation(peerName);
+            Peer peer = client.newPeer(peerName, peerLocation, fabricConfigManager.getPeerProperties(peerName));
+
+            //Query the actual peer for which channels it belongs to and check it belongs to this channel
+            Set<String> channels = client.queryChannels(peer);
+            if (!channels.contains(name)) {
+                log.warn("Peer {} does not appear to belong to channel {}", peerName, name);
+                return constructChannel(fabricConfigManager, client, sampleOrg, name);
+            }
+
+            newChannel.addPeer(peer);
+            sampleOrg.addPeer(peer);
+        }
+
+        for (String eventHubName : sampleOrg.getEventHubNames()) {
+            EventHub eventHub = client.newEventHub(eventHubName, sampleOrg.getEventHubLocation(eventHubName),
+                    fabricConfigManager.getEventHubProperties(eventHubName));
+            newChannel.addEventHub(eventHub);
+        }
+
+        newChannel.initialize();
+
+        return newChannel;
+    }
+
+    private Channel constructChannel(FabricConfigManager fabricConfigManager, HFClient client,
+                                     SampleOrg sampleOrg, String name) throws Exception {
+
+
         client.setUserContext(sampleOrg.getPeerAdmin());
 
         Collection<Orderer> orderers = new LinkedList<>();
@@ -168,12 +245,12 @@ public class FabricAutoConfig {
         Orderer anOrderer = orderers.iterator().next();
         orderers.remove(anOrderer);
 
-        ChannelConfiguration channelConfiguration = new ChannelConfiguration(new File(config.getFixturesPath() + "/e2e-2Orgs/channel/" + name + ".tx"));
+        ChannelConfiguration channelConfiguration = new ChannelConfiguration(new File(fabricConfigManager.getFabricConfig().getFixturesPath() + "/e2e-2Orgs/channel/" + name + ".tx"));
 
         //Create channel that has only one signer that is this orgs peer admin. If channel creation policy needed more signature they would need to be added too.
         Channel newChannel = client.newChannel(name, anOrderer, channelConfiguration, client.getChannelConfigurationSignature(channelConfiguration, sampleOrg.getPeerAdmin()));
 
-
+//        client
         for (String peerName : sampleOrg.getPeerNames()) {
             String peerLocation = sampleOrg.getPeerLocation(peerName);
 
@@ -211,125 +288,5 @@ public class FabricAutoConfig {
         return newChannel;
     }
 
-
-    @Bean(name = "installedProposal")
-    @Autowired
-    InstalledProposal installedProposal(FabricConfigManager fabricConfigManager, HFClient client, Channel channel,
-                                        FabricConfig config, ChaincodeID chaincodeID) {
-        int delta = 0;
-        InstalledProposal installedProposal = null;
-        SampleOrg sampleOrg = fabricConfigManager.getIntegrationTestsSampleOrg("peerOrg1");
-        try {
-
-            final String channelName = channel.getName();
-            boolean isFooChain = config.getFooChannelName().equals(channelName);
-            channel.setTransactionWaitTime(fabricConfigManager.getTransactionWaitTime());
-            channel.setDeployWaitTime(Integer.parseInt(config.getDeployWaitTime()));
-
-            Collection<Orderer> orderers = channel.getOrderers();
-            Collection<ProposalResponse> responses;
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            // Install Proposal Request
-            client.setUserContext(sampleOrg.getPeerAdmin());
-
-
-            InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
-            installProposalRequest.setChaincodeID(chaincodeID);
-
-            if (isFooChain) {
-                // on foo chain install from directory.
-                installProposalRequest.setChaincodeSourceLocation(new File(config.getFixturesPath()));
-            } else {
-                log.error("chain code error");
-                throw new Exception("chain code error");
-            }
-
-            installProposalRequest.setChaincodeVersion(config.getChainCodeVersion());
-
-            int numInstallProposal = 0;
-
-            Set<Peer> peersFromOrg = sampleOrg.getPeers();
-            numInstallProposal = numInstallProposal + peersFromOrg.size();
-            responses = client.sendInstallProposal(installProposalRequest, peersFromOrg);
-
-            for (ProposalResponse response : responses) {
-                if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
-                    log.info("Successful install proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-
-
-            SDKUtils.getProposalConsistencySets(responses);
-
-            log.info("Received %d install proposal responses. Successful+verified: {} . Failed: {}", numInstallProposal, successful.size(), failed.size());
-
-            if (failed.size() > 0) {
-                ProposalResponse first = failed.iterator().next();
-                log.info("Not enough endorsers for install :" + successful.size() + ".  " + first.getMessage());
-            }
-
-            // Instantiate chaincode.
-            InstantiateProposalRequest instantiateProposalRequest = client.newInstantiationProposalRequest();
-            instantiateProposalRequest.setProposalWaitTime(Integer.parseInt(config.getProposalWaitTime()));
-            instantiateProposalRequest.setChaincodeID(chaincodeID);
-            instantiateProposalRequest.setFcn("init");
-            instantiateProposalRequest.setArgs(new String[] {"a", "500", "b", "" + (200 + delta)});
-            Map<String, byte[]> tm = new HashMap<>();
-            tm.put("HyperLedgerFabric", "InstantiateProposalRequest:JavaSDK".getBytes(UTF_8));
-            tm.put("method", "InstantiateProposalRequest".getBytes(UTF_8));
-            instantiateProposalRequest.setTransientMap(tm);
-
-            /*
-              policy OR(Org1MSP.member, Org2MSP.member) meaning 1 signature from someone in either Org1 or Org2
-              See README.md Chaincode endorsement policies section for more details.
-            */
-            ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
-            chaincodeEndorsementPolicy.fromYamlFile(new File(config.getFixturesPath() + "/chaincodeendorsementpolicy.yaml"));
-            instantiateProposalRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
-
-            log.info("Sending instantiateProposalRequest to all peers with arguments: a and b set to 100 and {} respectively", "" + (200 + delta));
-            successful.clear();
-            failed.clear();
-
-            if (isFooChain) {  //Send responses both ways with specifying peers and by using those on the channel.
-                responses = channel.sendInstantiationProposal(instantiateProposalRequest, channel.getPeers());
-            } else {
-                responses = channel.sendInstantiationProposal(instantiateProposalRequest);
-            }
-            for (ProposalResponse response : responses) {
-                if (response.isVerified() && response.getStatus() == ProposalResponse.Status.SUCCESS) {
-                    successful.add(response);
-                    log.info("Succesful instantiate proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
-                } else {
-                    failed.add(response);
-                }
-            }
-
-            installedProposal = new InstalledProposal();
-            installedProposal.setFailed(failed);
-            installedProposal.setSuccessful(successful);
-            log.info("Received %d instantiate proposal responses. Successful+verified: {} . Failed: {}", responses.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                ProposalResponse first = failed.iterator().next();
-                log.error("Not enough endorsers for instantiate :" + successful.size() + "endorser failed with " + first.getMessage() + ". Was verified:" + first.isVerified());
-            }
-
-            // Send instantiate transaction to orderer
-            log.info("Sending instantiateTransaction to orderer with a and b set to 100 and {} respectively", "" + (200 + delta));
-            channel.sendTransaction(successful, orderers);
-
-        } catch (Exception e) {
-            log.info("Caught an exception running channel {}", channel.getName());
-            e.printStackTrace();
-            log.error("Test failed with error : " + e.getMessage());
-        }
-        return installedProposal;
-
-    }
 
 }
