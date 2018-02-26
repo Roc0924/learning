@@ -141,8 +141,8 @@ func (t *SimpleChaincode) move(stub shim.ChaincodeStubInterface, args []string) 
 	if err != nil {
 		return shim.Error("Invalid transaction amount, expecting a integer value")
 	}
-	Aval = Aval - X
-	Bval = Bval + X
+	Aval = Aval - X - 1
+	Bval = Bval + X + 1
 	fmt.Printf("Aval = %d, Bval = %d\n", Aval, Bval)
 
 	// Write the state back to the ledger
