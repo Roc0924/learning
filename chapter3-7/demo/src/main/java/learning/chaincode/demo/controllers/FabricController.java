@@ -1,16 +1,22 @@
 package learning.chaincode.demo.controllers;
 
+import learning.chaincode.demo.configs.InstalledProposal;
 import learning.chaincode.demo.dtos.Record;
 import learning.chaincode.demo.dtos.SampleOrg;
+import learning.chaincode.demo.dtos.TransactionRsp;
 import learning.chaincode.demo.services.FabricService;
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
+import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Create with IntelliJ IDEA
@@ -40,12 +46,11 @@ public class FabricController {
     }
 
     @RequestMapping(value = "/transaction", method = RequestMethod.GET)
-    public String transaction(@RequestParam(name = "source") String source,
-                              @RequestParam(name = "destination") String destination,
-                              @RequestParam(name = "delta") String delta) {
+    public TransactionRsp transaction(@RequestParam(name = "source") String source,
+                                      @RequestParam(name = "destination") String destination,
+                                      @RequestParam(name = "delta") String delta) {
         SampleOrg org = fabricService.getOrg("peerOrg1");
-        fabricService.transaction(channel, hfClient, org, chaincodeID, source, destination, delta);
-        return "{}";
+        return fabricService.transaction(channel, hfClient, org, chaincodeID, source, destination, delta);
     }
 
 
@@ -60,9 +65,14 @@ public class FabricController {
 //    }
 
 
-//    @RequestMapping(value = "/install", method = RequestMethod.GET)
-//    public InstalledProposal install() {
-//        return fabricService.installChainCode();
-//    }
+    @RequestMapping(value = "/queryBlockByTxID", method = RequestMethod.GET)
+    public List<String> queryBlockByTxID(@RequestParam(name = "transactionID") String transactionID) {
+        return fabricService.queryBlockByTxID(transactionID);
+    }
+
+
+
+
+
 
 }

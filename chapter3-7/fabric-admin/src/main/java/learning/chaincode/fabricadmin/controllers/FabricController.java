@@ -1,12 +1,14 @@
 package learning.chaincode.fabricadmin.controllers;
 
 
-import learning.chaincode.fabricadmin.dtos.InstalledProposal;
+import com.sun.net.httpserver.Filter;
+import learning.chaincode.fabricadmin.dtos.ChainCodeDto;
 import learning.chaincode.fabricadmin.services.FabricService;
+import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Create with IntelliJ IDEA
@@ -27,8 +29,37 @@ public class FabricController {
     }
 
     @RequestMapping(value = "/install", method = RequestMethod.GET)
-    public InstalledProposal install() {
+    public ChainCodeDto install() {
         return fabricService.installChainCode();
+    }
+
+
+
+    @RequestMapping(value = "/queryInstalledChaincodes", method = RequestMethod.GET)
+    public List<ChainCodeDto> queryInstalledChaincodes() {
+        return fabricService.queryInstalledChainCodes();
+    }
+
+    @RequestMapping(value = "/queryInstalledChaincodeByName", method = RequestMethod.GET)
+    public ChainCodeDto queryInstalledChaincodeByName(@RequestParam(name = "chainCodeName") String chainCodeName) {
+        return fabricService.queryInstalledChainCodeByName(chainCodeName);
+    }
+
+    @RequestMapping(value = "/upgradeInstalledChaincode", method = RequestMethod.PUT)
+    public ChainCodeDto upgradeInstalledChaincode(@RequestBody ChainCodeDto chainCodeDto) {
+        ChaincodeID newChaincodeID = ChaincodeID.newBuilder().setName(chainCodeDto.getName())
+                .setPath(chainCodeDto.getPath()).setVersion(chainCodeDto.getVersion()).build();
+
+        return fabricService.upgradeInstalledChaincode(newChaincodeID);
+    }
+
+
+    @RequestMapping(value = "/queryBlockById", method = RequestMethod.GET)
+    public ChainCodeDto queryBlockById(@RequestBody ChainCodeDto chainCodeDto) {
+        ChaincodeID newChaincodeID = ChaincodeID.newBuilder().setName(chainCodeDto.getName())
+                .setPath(chainCodeDto.getPath()).setVersion(chainCodeDto.getVersion()).build();
+
+        return fabricService.upgradeInstalledChaincode(newChaincodeID);
     }
 
 }

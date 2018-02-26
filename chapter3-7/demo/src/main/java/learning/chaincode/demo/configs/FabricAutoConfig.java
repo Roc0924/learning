@@ -105,6 +105,7 @@ public class FabricAutoConfig {
             String enrollmentSecret = null;
             try {
                 enrollmentSecret = ca.register(rr, admin);
+
             } catch (Exception e) {
                 Map requestStrObj = null;
                 Map responseStrObj = null;

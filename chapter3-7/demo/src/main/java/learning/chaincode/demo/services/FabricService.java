@@ -1,9 +1,11 @@
 package learning.chaincode.demo.services;
 
+import com.google.protobuf.ByteString;
 import learning.chaincode.demo.configs.FabricConfig;
 import learning.chaincode.demo.configs.FabricConfigManager;
 import learning.chaincode.demo.dtos.Record;
 import learning.chaincode.demo.dtos.SampleOrg;
+import learning.chaincode.demo.dtos.TransactionRsp;
 import lombok.extern.slf4j.Slf4j;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -11,10 +13,8 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -59,10 +59,10 @@ public class FabricService {
 
 
 
-    public void transaction(Channel channel, HFClient client, SampleOrg sampleOrg,
+    public TransactionRsp transaction(Channel channel, HFClient client, SampleOrg sampleOrg,
                             ChaincodeID chaincodeID, String source, String destination, String delta) {
         Collection<ProposalResponse> successful = new ArrayList<>();
-
+        String transactionID = null;
         try {
             client.setUserContext(sampleOrg.getUser(config.getUser1Name()));
 
@@ -92,12 +92,69 @@ public class FabricService {
 
 
 
-            channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
+
+
+            BlockEvent.TransactionEvent transactionEvent = channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
+            EventHub eventHub = transactionEvent.getEventHub();
+            log.info("eventHub:[{}]", eventHub);
+            String channelId = transactionEvent.getChannelId();
+            log.info("channelId:[{}]", channelId);
+            Long epoch = transactionEvent.getEpoch();
+            log.info("epoch:[{}]", epoch);
+            Date timestamp = transactionEvent.getTimestamp();
+            log.info("timestamp:[{}]", timestamp);
+            Integer transactionActionInfoCount = transactionEvent.getTransactionActionInfoCount();
+            log.info("transactionActionInfoCount:[{}]", transactionActionInfoCount);
+            log.info("--------------------------------------------------------------");
+            for(int i = 0; i < transactionActionInfoCount ;i++) {
+                BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo = transactionEvent.getTransactionActionInfo(i);
+
+                log.info("transactionActionInfo:[{}]", transactionActionInfo);
+            }
+            Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos = transactionEvent.getTransactionActionInfos();
+            log.info("--------------------------------------------------------------");
+            for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo : transactionActionInfos) {
+                log.info("transactionActionInfo:[{}]", transactionActionInfo);
+                int inputArgsCount = transactionActionInfo.getChaincodeInputArgsCount();
+                for (int i = 0; i < inputArgsCount; i++) {
+                    log.info("ChaincodeInputArgs:[{}]", new String(transactionActionInfo.getChaincodeInputArgs(i), "UTF-8"));
+                }
+                log.info("transactionActionInfo.getChaincodeInputArgsCount():[{}]", transactionActionInfo.getChaincodeInputArgsCount());
+                byte[] bytes = transactionActionInfo.getProposalResponseMessageBytes();
+                String message = new String(bytes, "UTF-8");
+                log.info("ProposalResponseMessage:[{}]", message);
+                int endorsementCount = transactionActionInfo.getEndorsementsCount();
+                for (int i = 0; i < endorsementCount; i++) {
+                    log.info("transactionActionInfo.getEndorsement:[{}]", transactionActionInfo.getEndorsementInfo(i));
+                }
+                log.info("transactionActionInfo.getProposalResponseMessage:[{}]", transactionActionInfo.getProposalResponseMessageBytes().toString());
+                byte[] payload = transactionActionInfo.getProposalResponsePayload();
+                String payloadStr = new String(payload, "UTF-8");
+                log.info("payload:[{}]", payloadStr);
+                log.info("proposal status:[{}]", transactionActionInfo.getProposalResponseStatus());
+                log.info("response message:[{}]", transactionActionInfo.getResponseMessage());
+                log.info("response status:[{}]", transactionActionInfo.getResponseStatus());
+                TxReadWriteSetInfo txReadWriteSetInfo = transactionActionInfo.getTxReadWriteSet();
+                for (int i = 0; i < txReadWriteSetInfo.getNsRwsetCount(); i++) {
+                    TxReadWriteSetInfo.NsRwsetInfo nsRwsetInfo = txReadWriteSetInfo.getNsRwsetInfo(i);
+                    log.info("nsRwsetInfo:[{}]", nsRwsetInfo);
+                }
+            }
+            transactionID = transactionEvent.getTransactionID();
+            log.info("transactionID:[{}]", transactionID);
+            BlockInfo.EnvelopeType envelopeType = transactionEvent.getType();
+            log.info("envelopeType:[{}]", envelopeType);
+
+            log.info("obj class:[{}]", transactionEvent);
         } catch (ProposalException | InvalidArgumentException | ExecutionException | InterruptedException | TimeoutException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
-        System.out.println();
+        TransactionRsp transactionRsp = new TransactionRsp();
+        transactionRsp.setTransactionID(transactionID);
+        return transactionRsp;
 
     }
 
@@ -305,6 +362,62 @@ public class FabricService {
     }
 
 
+    public List<String> queryBlockByTxID(String txID) {
+        List<String> result = new ArrayList<>();
+        try {
+            BlockInfo blockInfo = channel.queryBlockByTransactionID(txID);
+            List<ByteString> dataList = blockInfo.getBlock().getData().getDataList();
+            for (ByteString bytes : dataList) {
+                String tem = bytes.toString("utf-8");
+                result.add(tem);
+                log.info("block data :[{}]", tem);
+            }
+            log.info("");
+        } catch (InvalidArgumentException | ProposalException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return result;
 
-//    public InstalledProposal installChainCo
+    }
 }
+
+
+
+/**
+
+
+
+
+
+
+
+
+
+                getChaincodeInputArgs(int index)
+               getChaincodeInputArgsCount()
+	                      getEndorsementInfo(int index)
+              getEndorsementsCount()
+     getProposalResponseMessageBytes()
+     getProposalResponsePayload()
+       getProposalResponseStatus()
+   getResponseMessage()
+   getResponseMessageBytes()
+       getResponseStatus()
+   getTxReadWriteSet()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ */
