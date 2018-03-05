@@ -60,7 +60,7 @@ public class FabricService {
 
 
     public TransactionRsp transaction(Channel channel, HFClient client, SampleOrg sampleOrg,
-                            ChaincodeID chaincodeID, String source, String destination, String delta) {
+                                      ChaincodeID chaincodeID, String source, String destination, String delta) {
         Collection<ProposalResponse> successful = new ArrayList<>();
         String transactionID = null;
         try {
@@ -95,51 +95,7 @@ public class FabricService {
 
 
             BlockEvent.TransactionEvent transactionEvent = channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
-            EventHub eventHub = transactionEvent.getEventHub();
-            log.info("eventHub:[{}]", eventHub);
-            String channelId = transactionEvent.getChannelId();
-            log.info("channelId:[{}]", channelId);
-            Long epoch = transactionEvent.getEpoch();
-            log.info("epoch:[{}]", epoch);
-            Date timestamp = transactionEvent.getTimestamp();
-            log.info("timestamp:[{}]", timestamp);
-            Integer transactionActionInfoCount = transactionEvent.getTransactionActionInfoCount();
-            log.info("transactionActionInfoCount:[{}]", transactionActionInfoCount);
-            log.info("--------------------------------------------------------------");
-            for(int i = 0; i < transactionActionInfoCount ;i++) {
-                BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo = transactionEvent.getTransactionActionInfo(i);
 
-                log.info("transactionActionInfo:[{}]", transactionActionInfo);
-            }
-            Iterable<BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo> transactionActionInfos = transactionEvent.getTransactionActionInfos();
-            log.info("--------------------------------------------------------------");
-            for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo : transactionActionInfos) {
-                log.info("transactionActionInfo:[{}]", transactionActionInfo);
-                int inputArgsCount = transactionActionInfo.getChaincodeInputArgsCount();
-                for (int i = 0; i < inputArgsCount; i++) {
-                    log.info("ChaincodeInputArgs:[{}]", new String(transactionActionInfo.getChaincodeInputArgs(i), "UTF-8"));
-                }
-                log.info("transactionActionInfo.getChaincodeInputArgsCount():[{}]", transactionActionInfo.getChaincodeInputArgsCount());
-                byte[] bytes = transactionActionInfo.getProposalResponseMessageBytes();
-                String message = new String(bytes, "UTF-8");
-                log.info("ProposalResponseMessage:[{}]", message);
-                int endorsementCount = transactionActionInfo.getEndorsementsCount();
-                for (int i = 0; i < endorsementCount; i++) {
-                    log.info("transactionActionInfo.getEndorsement:[{}]", transactionActionInfo.getEndorsementInfo(i));
-                }
-                log.info("transactionActionInfo.getProposalResponseMessage:[{}]", transactionActionInfo.getProposalResponseMessageBytes().toString());
-                byte[] payload = transactionActionInfo.getProposalResponsePayload();
-                String payloadStr = new String(payload, "UTF-8");
-                log.info("payload:[{}]", payloadStr);
-                log.info("proposal status:[{}]", transactionActionInfo.getProposalResponseStatus());
-                log.info("response message:[{}]", transactionActionInfo.getResponseMessage());
-                log.info("response status:[{}]", transactionActionInfo.getResponseStatus());
-                TxReadWriteSetInfo txReadWriteSetInfo = transactionActionInfo.getTxReadWriteSet();
-                for (int i = 0; i < txReadWriteSetInfo.getNsRwsetCount(); i++) {
-                    TxReadWriteSetInfo.NsRwsetInfo nsRwsetInfo = txReadWriteSetInfo.getNsRwsetInfo(i);
-                    log.info("nsRwsetInfo:[{}]", nsRwsetInfo);
-                }
-            }
             transactionID = transactionEvent.getTransactionID();
             log.info("transactionID:[{}]", transactionID);
             BlockInfo.EnvelopeType envelopeType = transactionEvent.getType();
@@ -147,8 +103,6 @@ public class FabricService {
 
             log.info("obj class:[{}]", transactionEvent);
         } catch (ProposalException | InvalidArgumentException | ExecutionException | InterruptedException | TimeoutException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
@@ -381,6 +335,51 @@ public class FabricService {
         return result;
 
     }
+
+    public Record register(String userId, String value, SampleOrg sampleOrg) {
+        Collection<ProposalResponse> successful = new ArrayList<>();
+        String transactionID = null;
+        Record record = new Record();
+        try {
+            hfClient.setUserContext(sampleOrg.getUser(config.getUser1Name()));
+
+            // Send transaction proposal to all peers
+            TransactionProposalRequest transactionProposalRequest = hfClient.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chaincodeID);
+            transactionProposalRequest.setFcn("invoke");
+            transactionProposalRequest.setProposalWaitTime(Integer.parseInt(config.getProposalWaitTime()));
+            transactionProposalRequest.setArgs(new String[] {"register", userId, value});
+
+            Map<String, byte[]> tm2 = new HashMap<>();
+            tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
+            tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8));
+            tm2.put("result", ":)".getBytes(UTF_8));  /// This should be returned see chaincode.
+            transactionProposalRequest.setTransientMap(tm2);
+
+            log.info("sending transactionProposal to all peers with arguments: move(a,b,100)");
+
+            Collection<ProposalResponse> transactionPropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
+
+            for (ProposalResponse response : transactionPropResp) {
+                if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
+                    log.info("Successful  transaction proposal response Txid::{} from peer:{}", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                }
+            }
+
+            if (successful.size() > 0) {
+                record = this.queryByUserId(userId);
+            }
+
+            channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (ProposalException | InvalidArgumentException | ExecutionException | InterruptedException | TimeoutException e) {
+            e.printStackTrace();
+        }
+
+        return record;
+    }
+
+
 }
 
 
