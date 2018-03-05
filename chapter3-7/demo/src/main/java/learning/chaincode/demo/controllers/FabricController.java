@@ -70,7 +70,11 @@ public class FabricController {
         return fabricService.queryBlockByTxID(transactionID);
     }
 
-
+    @RequestMapping(value = "/register", method = RequestMethod.GET)
+    public Record register(@RequestParam(name = "userId") String userId, @RequestParam(name = "value") String value) {
+        SampleOrg sampleOrg = fabricService.getOrg("peerOrg1");
+        return fabricService.register(userId, value, sampleOrg);
+    }
 
 
 
