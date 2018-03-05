@@ -224,7 +224,7 @@ public class FabricConfigManager {
 
     private String getTestChannelPath() {
 
-        return "demo/target/classes/e2e-2Orgs/channel";
+        return "fabric-admin/target/classes/e2e-2Orgs/channel";
 
     }
 
