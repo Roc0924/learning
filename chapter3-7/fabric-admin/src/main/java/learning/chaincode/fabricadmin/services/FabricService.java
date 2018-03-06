@@ -63,11 +63,6 @@ public class FabricService {
 
 
     public ChainCodeDto installChainCode() {
-                int delta = 0;
-
-
-
-
         SampleOrg sampleOrg = fabricConfigManager.getIntegrationTestsSampleOrg("peerOrg1");
 
         ChainCodeDto chainCodeDto = queryInstalledChainCodeByName(chaincodeID.getName());
@@ -175,7 +170,7 @@ public class FabricService {
             }
 
             // Send instantiate transaction to orderer
-            log.info("Sending instantiateTransaction to orderer with a and b set to 100 and {} respectively", "" + (200 + delta));
+            log.info("Sending instantiateTransaction to orderer with a and b set to 100 and 200 respectively");
             channel.sendTransaction(successful, orderers);
 
         } catch (Exception e) {
@@ -295,7 +290,8 @@ public class FabricService {
             upgradeProposalRequest.setChaincodeID(chaincodeID);
             upgradeProposalRequest.setProposalWaitTime(Long.parseLong(fabricConfigManager.getFabricConfig().getProposalWaitTime()));
             upgradeProposalRequest.setFcn("init");
-            upgradeProposalRequest.setArgs(new String[] {});
+//            upgradeProposalRequest.setArgs(new String[] {});
+            upgradeProposalRequest.setArgs(new String[] {"a", "500", "b", "1000"});
             ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
             chaincodeEndorsementPolicy.fromYamlFile(new File(config.getFixturesPath() + "/chaincodeendorsementpolicy.yaml"));
 
@@ -306,7 +302,13 @@ public class FabricService {
             upgradeProposalRequest.setUserContext(sampleOrg.getPeerAdmin());
 
             Collection<ProposalResponse> responses2 = channel.sendUpgradeProposal(upgradeProposalRequest);
+            Collection<Set<ProposalResponse>> proposalConsistencySets2 = SDKUtils.getProposalConsistencySets(responses2);
+            if (proposalConsistencySets2.size() != 1) {
+                log.error(format("upgrade Expected only one set of consistent proposal responses but got %d", proposalConsistencySets2.size()));
+            }
 
+            successful.clear();
+            failed.clear();
             for (ProposalResponse proposalResponse : responses2) {
                 if(proposalResponse.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
                     successful.add(proposalResponse);
