@@ -1,9 +1,11 @@
 package learning.chaincode.demo.services;
 
+import com.google.gson.Gson;
 import com.google.protobuf.ByteString;
 import learning.chaincode.demo.configs.FabricConfig;
 import learning.chaincode.demo.configs.FabricConfigManager;
 import learning.chaincode.demo.dtos.Record;
+import learning.chaincode.demo.dtos.RecordJson;
 import learning.chaincode.demo.dtos.SampleOrg;
 import learning.chaincode.demo.dtos.TransactionRsp;
 import lombok.extern.slf4j.Slf4j;
@@ -71,7 +73,7 @@ public class FabricService {
             transactionProposalRequest.setChaincodeID(chaincodeID);
             transactionProposalRequest.setFcn("invoke");
             transactionProposalRequest.setProposalWaitTime(Integer.parseInt(config.getProposalWaitTime()));
-            transactionProposalRequest.setArgs(new String[] {"move", source, destination, delta});
+            transactionProposalRequest.setArgs(new String[] {"rebateDirectly", source, destination, delta});
 
             Map<String, byte[]> tm2 = new HashMap<>();
             tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
@@ -338,7 +340,6 @@ public class FabricService {
 
     public Record register(String userId, String value, SampleOrg sampleOrg) {
         Collection<ProposalResponse> successful = new ArrayList<>();
-        String transactionID = null;
         Record record = new Record();
         try {
             hfClient.setUserContext(sampleOrg.getUser(config.getUser1Name()));
@@ -367,11 +368,14 @@ public class FabricService {
                 }
             }
 
-            if (successful.size() > 0) {
-                record = this.queryByUserId(userId);
-            }
+
 
             channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
+
+            //            if (successful.size() > 0) {
+//                record = this.queryByUserId(userId);
+//            }
+
         } catch (ProposalException | InvalidArgumentException | ExecutionException | InterruptedException | TimeoutException e) {
             e.printStackTrace();
         }
@@ -380,43 +384,87 @@ public class FabricService {
     }
 
 
+    public RecordJson registerJson(String userId, RecordJson value, SampleOrg sampleOrg) {
+
+        Collection<ProposalResponse> successful = new ArrayList<>();
+        Gson gson = new Gson();
+        String valueStr = gson.toJson(value);
+
+        try {
+            hfClient.setUserContext(sampleOrg.getUser(config.getUser1Name()));
+
+            // Send transaction proposal to all peers
+            TransactionProposalRequest transactionProposalRequest = hfClient.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chaincodeID);
+            transactionProposalRequest.setFcn("invoke");
+            transactionProposalRequest.setProposalWaitTime(Integer.parseInt(config.getProposalWaitTime()));
+            transactionProposalRequest.setArgs(new String[] {"registerJson", userId, valueStr});
+
+            Map<String, byte[]> tm2 = new HashMap<>();
+            tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8));
+            tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8));
+            tm2.put("result", ":)".getBytes(UTF_8));  /// This should be returned see chaincode.
+            transactionProposalRequest.setTransientMap(tm2);
+
+            log.info("sending transactionProposal to all peers with arguments: move(a,b,100)");
+
+            Collection<ProposalResponse> transactionPropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
+
+            for (ProposalResponse response : transactionPropResp) {
+                if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
+                    log.info("Successful  transaction proposal response Txid::{} from peer:{}", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                }
+            }
+
+            channel.sendTransaction(successful).get(fabricConfigManager.getTransactionWaitTime(), TimeUnit.SECONDS);
+
+        } catch (ProposalException | InvalidArgumentException | ExecutionException | InterruptedException | TimeoutException e) {
+            e.printStackTrace();
+        }
+
+
+
+        return value;
+    }
+
+    public RecordJson queryByUserIdJson(String userId) {
+
+        Gson gson = new Gson();
+
+        QueryByChaincodeRequest queryByChaincodeRequest = hfClient.newQueryProposalRequest();
+        queryByChaincodeRequest.setArgs(new String[] {"queryJson", userId});
+        queryByChaincodeRequest.setFcn("invoke");
+        queryByChaincodeRequest.setChaincodeID(chaincodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
+        try {
+            queryProposals = channel.queryByChaincode(queryByChaincodeRequest);
+        } catch (Exception e) {
+            throw new CompletionException(e);
+        }
+
+
+        boolean isEqual = false;
+        RecordJson recordJson = null;
+        String recordStr = null;
+        for (ProposalResponse response : queryProposals) {
+            String tempRecordStr = response.getProposalResponse().getResponse().getPayload().toStringUtf8();
+            if (null !=  recordStr) {
+                if ( tempRecordStr.equals(recordStr)) {
+                    isEqual = true;
+                }
+            } else {
+                recordStr = tempRecordStr;
+            }
+        }
+
+        if (isEqual) {
+            recordJson = gson.fromJson(recordStr, RecordJson.class);
+        }
+
+
+        return recordJson;
+    }
 }
-
-
-
-/**
-
-
-
-
-
-
-
-
-
-                getChaincodeInputArgs(int index)
-               getChaincodeInputArgsCount()
-	                      getEndorsementInfo(int index)
-              getEndorsementsCount()
-     getProposalResponseMessageBytes()
-     getProposalResponsePayload()
-       getProposalResponseStatus()
-   getResponseMessage()
-   getResponseMessageBytes()
-       getResponseStatus()
-   getTxReadWriteSet()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- */

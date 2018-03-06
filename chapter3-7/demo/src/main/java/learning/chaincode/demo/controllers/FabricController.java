@@ -2,6 +2,7 @@ package learning.chaincode.demo.controllers;
 
 import learning.chaincode.demo.configs.InstalledProposal;
 import learning.chaincode.demo.dtos.Record;
+import learning.chaincode.demo.dtos.RecordJson;
 import learning.chaincode.demo.dtos.SampleOrg;
 import learning.chaincode.demo.dtos.TransactionRsp;
 import learning.chaincode.demo.services.FabricService;
@@ -11,10 +12,7 @@ import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -52,7 +50,13 @@ public class FabricController {
         SampleOrg org = fabricService.getOrg("peerOrg1");
         return fabricService.transaction(channel, hfClient, org, chaincodeID, source, destination, delta);
     }
-
+    @RequestMapping(value = "/rebateDirectly", method = RequestMethod.GET)
+    public TransactionRsp rebateDirectly(@RequestParam(name = "source") String source,
+                                      @RequestParam(name = "destination") String destination,
+                                      @RequestParam(name = "delta") String delta) {
+        SampleOrg org = fabricService.getOrg("peerOrg1");
+        return fabricService.transaction(channel, hfClient, org, chaincodeID, source, destination, delta);
+    }
 
     @RequestMapping(value = "/query", method = RequestMethod.GET)
     public Record query(@RequestParam(name = "userId") String userId) {
@@ -63,6 +67,7 @@ public class FabricController {
 //    public Test queryBlocks() {
 //        return fabricService.queryBlock();
 //    }
+
 
 
     @RequestMapping(value = "/queryBlockByTxID", method = RequestMethod.GET)
@@ -77,6 +82,15 @@ public class FabricController {
     }
 
 
+    @RequestMapping(value = "/registerJson", method = RequestMethod.POST)
+    public RecordJson registerJson(@RequestBody RecordJson value) {
+        SampleOrg sampleOrg = fabricService.getOrg("peerOrg1");
+        return fabricService.registerJson(value.getUserId(), value, sampleOrg);
+    }
 
+    @RequestMapping(value = "/queryJson", method = RequestMethod.GET)
+    public RecordJson queryJson(@RequestParam(name = "userId") String userId) {
+        return fabricService.queryByUserIdJson(userId);
+    }
 
 }
