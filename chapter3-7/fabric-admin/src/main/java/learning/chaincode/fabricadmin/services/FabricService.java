@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -62,11 +63,6 @@ public class FabricService {
 
 
     public ChainCodeDto installChainCode() {
-                int delta = 0;
-
-
-
-
         SampleOrg sampleOrg = fabricConfigManager.getIntegrationTestsSampleOrg("peerOrg1");
 
         ChainCodeDto chainCodeDto = queryInstalledChainCodeByName(chaincodeID.getName());
@@ -174,7 +170,7 @@ public class FabricService {
             }
 
             // Send instantiate transaction to orderer
-            log.info("Sending instantiateTransaction to orderer with a and b set to 100 and {} respectively", "" + (200 + delta));
+            log.info("Sending instantiateTransaction to orderer with a and b set to 100 and 200 respectively");
             channel.sendTransaction(successful, orderers);
 
         } catch (Exception e) {
@@ -224,12 +220,78 @@ public class FabricService {
     public ChainCodeDto upgradeChainCode(ChaincodeID chaincodeID, SampleOrg sampleOrg) {
         ChainCodeDto installedChainCodeDto = queryInstalledChainCodeByName(chaincodeID.getName());
         try {
+
+
+            InstallProposalRequest installProposalRequest = hfClient.newInstallProposalRequest();
+            installProposalRequest.setChaincodeID(chaincodeID);
+            ////For GO language and serving just a single user, chaincodeSource is mostly likely the users GOPATH
+            installProposalRequest.setChaincodeSourceLocation(new File(config.getFixturesPath()));
+            installProposalRequest.setChaincodeVersion(chaincodeID.getVersion());
+            installProposalRequest.setProposalWaitTime(Integer.parseInt(config.getProposalWaitTime()));
+
+
+            ////////////////////////////
+            // only a client from the same org as the peer can issue an install request
+            int numInstallProposal = 0;
+
+            Collection<ProposalResponse> responses;
+            final Collection<ProposalResponse> successful = new LinkedList<>();
+            final Collection<ProposalResponse> failed = new LinkedList<>();
+            Collection<Peer> peersFromOrg = channel.getPeers();
+            numInstallProposal = numInstallProposal + peersFromOrg.size();
+
+            responses = hfClient.sendInstallProposal(installProposalRequest, peersFromOrg);
+
+            for (ProposalResponse response : responses) {
+                if (response.getStatus() == ChaincodeResponse.Status.SUCCESS) {
+                    log.info("Successful install proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+
+            log.info("Received {} install proposal responses. Successful+verified: {} . Failed: {}", numInstallProposal, successful.size(), failed.size());
+
+            if (failed.size() > 0) {
+                ProposalResponse first = failed.iterator().next();
+                log.error("Not enough endorsers for install :" + successful.size() + ".  " + first.getMessage());
+            }
+
+            // Check that all the proposals are consistent with each other. We should have only one set
+            // where all the proposals above are consistent.
+            Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(responses);
+            if (proposalConsistencySets.size() != 1) {
+                log.error(format("Expected only one set of consistent install proposal responses but got {}", proposalConsistencySets.size()));
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             UpgradeProposalRequest upgradeProposalRequest = hfClient.newUpgradeProposalRequest();
 
             upgradeProposalRequest.setChaincodeID(chaincodeID);
             upgradeProposalRequest.setProposalWaitTime(Long.parseLong(fabricConfigManager.getFabricConfig().getProposalWaitTime()));
             upgradeProposalRequest.setFcn("init");
-            upgradeProposalRequest.setArgs(new String[] {"c", "500"});
+//            upgradeProposalRequest.setArgs(new String[] {});
+            upgradeProposalRequest.setArgs(new String[] {"a", "500", "b", "1000"});
             ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
             chaincodeEndorsementPolicy.fromYamlFile(new File(config.getFixturesPath() + "/chaincodeendorsementpolicy.yaml"));
 
@@ -239,9 +301,15 @@ public class FabricService {
             upgradeProposalRequest.setTransientMap(tmap);
             upgradeProposalRequest.setUserContext(sampleOrg.getPeerAdmin());
 
-            Collection<ProposalResponse> responses = channel.sendUpgradeProposal(upgradeProposalRequest);
+            Collection<ProposalResponse> responses2 = channel.sendUpgradeProposal(upgradeProposalRequest);
+            Collection<Set<ProposalResponse>> proposalConsistencySets2 = SDKUtils.getProposalConsistencySets(responses2);
+            if (proposalConsistencySets2.size() != 1) {
+                log.error(format("upgrade Expected only one set of consistent proposal responses but got %d", proposalConsistencySets2.size()));
+            }
 
-            for (ProposalResponse proposalResponse : responses) {
+            successful.clear();
+            failed.clear();
+            for (ProposalResponse proposalResponse : responses2) {
                 if(proposalResponse.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
                     successful.add(proposalResponse);
                 } else {
